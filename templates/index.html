@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cleared for Delay — U.S. Flight Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">
+    <span class="nav-icon">✈</span>
+    <span class="nav-title">CLEARED FOR DELAY</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-tool="flight-lookup">Flight Lookup</button>
+    <button class="nav-tab" data-tool="airline-report">Airline Report</button>
+    <button class="nav-tab" data-tool="airport-profile">Airport Profile</button>
+    <button class="nav-tab" data-tool="when-to-fly">When to Fly</button>
+  </div>
+  <div class="nav-badge">2021–2024 · 26.6M Flights</div>
+</nav>
+
+<!-- ─── TOOL PANELS ──────────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- ── FLIGHT LOOKUP ─────────────────────────────────────────────────── -->
+  <section class="tool-panel active" id="panel-flight-lookup">
+    <div class="panel-header">
+      <h2>Flight Lookup</h2>
+      <p>Search any route + airline combination to see delay profiles, weather, and distribution.</p>
+    </div>
+    <form class="search-form" id="form-flight-lookup">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Origin</label>
+          <input type="text" id="fl-origin" placeholder="e.g. JFK" maxlength="3" class="code-input" required>
+        </div>
+        <div class="form-group arrow-sep">→</div>
+        <div class="form-group">
+          <label>Destination</label>
+          <input type="text" id="fl-dest" placeholder="e.g. LAX" maxlength="3" class="code-input" required>
+        </div>
+        <div class="form-group">
+          <label>Carrier</label>
+          <select id="fl-carrier">
+            {% for c in carriers %}
+            <option value="{{ c.code }}">{{ c.code }} — {{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Month</label>
+          <select id="fl-month">
+            <option value="all">All Months</option>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time of Day</label>
+          <select id="fl-tod">
+            <option value="Any">Any</option>
+            <option value="Red-eye">Red-eye</option>
+            <option value="Morning">Morning</option>
+            <option value="Afternoon">Afternoon</option>
+            <option value="Evening">Evening</option>
+            <option value="Night">Night</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-search">Search</button>
+      </div>
+    </form>
+    <div id="result-flight-lookup" class="result-area"></div>
+  </section>
+
+  <!-- ── AIRLINE REPORT ────────────────────────────────────────────────── -->
+  <section class="tool-panel" id="panel-airline-report">
+    <div class="panel-header">
+      <h2>Airline Report Card</h2>
+      <p>Full performance dashboard for any carrier — rankings, monthly trends, best/worst airports and routes.</p>
+    </div>
+    <form class="search-form" id="form-airline-report">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Airline</label>
+          <select id="ar-carrier">
+            {% for c in carriers %}
+            <option value="{{ c.code }}">{{ c.code }} — {{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-search">Generate Report</button>
+      </div>
+    </form>
+    <div id="result-airline-report" class="result-area"></div>
+  </section>
+
+  <!-- ── AIRPORT PROFILE ───────────────────────────────────────────────── -->
+  <section class="tool-panel" id="panel-airport-profile">
+    <div class="panel-header">
+      <h2>Airport Profile</h2>
+      <p>Carrier breakdown, seasonal patterns, time-of-day delays, and route map for any of the top 75 U.S. airports.</p>
+    </div>
+    <form class="search-form" id="form-airport-profile">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Airport Code</label>
+          <input type="text" id="ap-airport" placeholder="e.g. ORD" maxlength="3" class="code-input" required>
+        </div>
+        <button type="submit" class="btn-search">Load Profile</button>
+      </div>
+    </form>
+    <div id="result-airport-profile" class="result-area"></div>
+  </section>
+
+  <!-- ── WHEN TO FLY ───────────────────────────────────────────────────── -->
+  <section class="tool-panel" id="panel-when-to-fly">
+    <div class="panel-header">
+      <h2>When Should I Fly?</h2>
+      <p>Month × time-of-day heatmap showing the best and worst windows for your specific route and airline.</p>
+    </div>
+    <form class="search-form" id="form-when-to-fly">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Origin</label>
+          <input type="text" id="wf-origin" placeholder="e.g. ORD" maxlength="3" class="code-input" required>
+        </div>
+        <div class="form-group arrow-sep">→</div>
+        <div class="form-group">
+          <label>Destination</label>
+          <input type="text" id="wf-dest" placeholder="e.g. MIA" maxlength="3" class="code-input" required>
+        </div>
+        <div class="form-group">
+          <label>Carrier</label>
+          <select id="wf-carrier">
+            {% for c in carriers %}
+            <option value="{{ c.code }}">{{ c.code }} — {{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-search">Show Heatmap</button>
+      </div>
+    </form>
+    <div id="result-when-to-fly" class="result-area"></div>
+  </section>
+
+</main>
+
+<!-- ─── LOADING OVERLAY ──────────────────────────────────────────────────── -->
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Querying 26.6M flights…</div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
