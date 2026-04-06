@@ -1,0 +1,28 @@
+# Best 5 and worst 5 airports per carrier
+carrier_best_airports = {}
+carrier_worst_airports = {}
+
+for carrier in carrier_airport.index.get_level_values(0).unique():
+    subset = carrier_airport.loc[carrier]
+    carrier_best_airports[carrier] = subset.sort_values('avg_delay').head(5)[['avg_delay','delay_rate','flights']].round(2).to_dict('index')
+    carrier_worst_airports[carrier] = subset.sort_values('avg_delay', ascending=False).head(5)[['avg_delay','delay_rate','flights']].round(2).to_dict('index')
+
+import json
+print("=== CARRIER BEST AIRPORTS ===")
+print(json.dumps(carrier_best_airports, indent=2))
+print("\n=== CARRIER WORST AIRPORTS ===")
+print(json.dumps(carrier_worst_airports, indent=2))
+
+# Best 5 and worst 5 routes per carrier (from carrier_routes)
+carrier_best_routes = {}
+carrier_worst_routes = {}
+
+for carrier in carrier_routes.index.get_level_values(0).unique():
+    subset = carrier_routes.loc[carrier]
+    carrier_best_routes[carrier] = subset.sort_values('avg_delay').head(5)[['avg_delay','delay_rate','flights']].round(2).to_dict('index')
+    carrier_worst_routes[carrier] = subset.sort_values('avg_delay', ascending=False).head(5)[['avg_delay','delay_rate','flights']].round(2).to_dict('index')
+
+print("\n=== CARRIER BEST ROUTES ===")
+print(json.dumps(carrier_best_routes, indent=2))
+print("\n=== CARRIER WORST ROUTES ===")
+print(json.dumps(carrier_worst_routes, indent=2))
